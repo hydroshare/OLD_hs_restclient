@@ -37,10 +37,12 @@ class GenericResourceTestCase(unittest.TestCase):
         newResource = self.hs.createResource('my new resource', filename=self.zipFilename)
         newResourceId = newResource.id
         self.assertEqual(title, newResource.title)
+        self.assertIsNotNone(newResource.resource_file)
 
         # Get the newly created resource
         resource = self.hs.getResource(newResourceId)
         self.assertEqual(title, resource.title)
+        self.assertIsNotNone(resource.resource_file)
         
         # Unzip the file from the resource and verify contents are the same
         outZipname = 'out.zip'
@@ -58,10 +60,12 @@ class GenericResourceTestCase(unittest.TestCase):
         newResource = self.hs.createResource('my new resource', filename=self.zipFilename)
         newResourceId = newResource.id
         self.assertEqual(title, newResource.title)
+        self.assertIsNotNone(newResource.resource_file)
          
         newResource.title = 'my updated title'
         updatedResource = self.hs.updateResource(newResource)
         self.assertEqual(newResource.title, updatedResource.title)
+        self.assertIsNotNone(newResource.resource_file)
     
     
     def test_create_and_delete_resource(self):

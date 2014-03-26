@@ -1,3 +1,26 @@
+"""
+
+Client library for HydroShare's REST API
+
+To create and get a resource:
+    >>> from hs_restclient import HydroShare
+    >>> hs = HydroShare('http://127.0.0.1:8001/api/v1/', user_name='hs', password='water')
+    >>> res = hs.createResource('created with API', filename='to.zip')
+    >>> res.id
+    >>> res.title
+    >>> res2 = hs.getResource(id)
+    >>> res2.title
+    >>> res2.writeFile('from.zip')
+    
+To update a resource:
+    >>> res2.title = mynewtitle
+    >>> res2 = hs.updateResource(res2)
+    
+To delete a resource:
+    >>> result = hs.deleteResource(res2)
+    >>> if not result: print('Error deleting resource')
+    
+"""
 
 import os
 import mimetypes
@@ -166,13 +189,9 @@ class HydroShare(object):
             initObj = newResource._getObj()
             # TODO: error checking
             result = self.api.resource.post(initObj)
-            # Copy created resource to existing object
-            if Resource.RESOURCE_FILE_KEY in initObj:
-                # HydroShare doesn't send the file field back in the response, so copy it
-                result[Resource.RESOURCE_FILE_KEY] = initObj[Resource.RESOURCE_FILE_KEY]
-            newResource._setObj(result)
-            
-            return newResource
+            if not result:
+                raise HydroShareException('Failed to create resource')
+            return self.getResource(result['id'])
         else:
             raise NotImplementedError("Type %s is not supported" % (str(resource_type), ) )
         
@@ -187,8 +206,9 @@ class HydroShare(object):
         initObj = resource._getObj()
         # TODO error checking
         result = self.api.resource(resource.id).put(data=initObj)
-        resource._setObj(result)
-        return resource
+        if not result:
+            raise HydroShareException("Failed to update resource with ID: %d" % (resource.id,) )
+        return self.getResource(resource.id)
     
     def deleteResource(self, resource):
         result = self.api.resource(resource.id).delete()

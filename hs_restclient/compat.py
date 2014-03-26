@@ -1,5 +1,6 @@
 import sys
 
+
 # -------
 # Pythons
 # -------
@@ -45,7 +46,6 @@ is_py24 = (is_py2 and _ver[1] == 4)
 # Platforms
 # ---------
 
-
 # Syntax sugar.
 _ver = sys.version.lower()
 
@@ -55,6 +55,20 @@ is_ironpython = ('iron' in _ver)
 
 # Assume CPython, if nothing else.
 is_cpython = not any((is_pypy, is_jython, is_ironpython))
+
+# Windows-based system.
+is_windows = 'win32' in str(sys.platform).lower()
+
+# Standard Linux 2+ system.
+is_linux = ('linux' in str(sys.platform).lower())
+is_osx = ('darwin' in str(sys.platform).lower())
+is_hpux = ('hpux' in str(sys.platform).lower())   # Complete guess.
+is_solaris = ('solar==' in str(sys.platform).lower())   # Complete guess.
+
+
+# ---------
+# Specifics
+# ---------
 
 if is_py2:
     if is_cpython:

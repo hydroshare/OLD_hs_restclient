@@ -1,11 +1,12 @@
 
 import os
-from cStringIO import StringIO
 import mimetypes
 import base64
 
 import slumber
 import simplejson as json
+
+from .compat import StringIO
 
 
 class HydroShareException(Exception):
@@ -14,6 +15,8 @@ class HydroShareException(Exception):
 class _entity(object):
     """
     Root entity used for creating all other object types (via subclassing)
+    
+    Never use directly.
     """
     def __init__(self, obj=None):
         """ Construct an entity
@@ -39,15 +42,15 @@ class _entity(object):
         self._obj[name] = value
         
     def _getObj(self):
-        return self._obj
+        return self.__dict__['_obj']
     
     def _setObj(self, obj):
-        self._obj = obj
+        self.__dict__['_obj'] = obj
 
 
-class GenericResource(_entity):
+class Resource(_entity):
     """
-    A HydroShare Generic Resource
+    A HydroShare Resource
     """
     RESOURCE_FILE_KEY = 'resource_file'
     FILE_KEY = 'file' 
@@ -63,22 +66,22 @@ class GenericResource(_entity):
     
     def __init__(self, obj=None):
         """
-            Constructor for GenericResources.
+            Constructor for Resources.
             
-            Generally should not be called directly
+            Generally should not be called directly outside of the API
         """
-        super(GenericResource, self).__init__(obj)
+        super(Resource, self).__init__(obj)
         try:
-            resource_file = self._obj[GenericResource.RESOURCE_FILE_KEY]
-            if not GenericResource.FILE_KEY in resource_file:
+            resource_file = self._obj[Resource.RESOURCE_FILE_KEY]
+            if not Resource.FILE_KEY in resource_file:
                 raise HydroShareException("resource_file object of resource %d has no key %s" % \
-                                          (self._obj['id'], GenericResource.FILE_KEY) )
-            if not GenericResource.FILE_NAME_KEY in resource_file:
+                                          (self._obj['id'], Resource.FILE_KEY) )
+            if not Resource.FILE_NAME_KEY in resource_file:
                 raise HydroShareException("resource_file object of resource %d has no key %s" % \
-                                          (self._obj['id'], GenericResource.FILE_NAME_KEY) )
-            if not GenericResource.FILE_TYPE_KEY in resource_file:
+                                          (self._obj['id'], Resource.FILE_NAME_KEY) )
+            if not Resource.FILE_TYPE_KEY in resource_file:
                 raise HydroShareException("resource_file object of resource %d has no key %s" % \
-                                          (self._obj['id'], GenericResource.FILE_TYPE_KEY) )
+                                          (self._obj['id'], Resource.FILE_TYPE_KEY) )
         except KeyError:
             pass
         
@@ -94,11 +97,11 @@ class GenericResource(_entity):
         base64.encode(infile, encoded)
         infile.close()
         try:
-            resource_file = self._obj[GenericResource.RESOURCE_FILE_KEY]
+            resource_file = self._obj[Resource.RESOURCE_FILE_KEY]
         except KeyError:
             resource_file = {}
-            self._obj[GenericResource.RESOURCE_FILE_KEY] = resource_file
-        resource_file[GenericResource.FILE_KEY] = encoded.getvalue().replace('\n', '')
+            self._obj[Resource.RESOURCE_FILE_KEY] = resource_file
+        resource_file[Resource.FILE_KEY] = encoded.getvalue().replace('\n', '')
         encoded.close()
       
     def writeFile(self, filename):
@@ -106,7 +109,7 @@ class GenericResource(_entity):
         Write contents of file to file named by filename
         """
         outfile = open(filename, 'wb')
-        encoded = StringIO(self.resource_file[GenericResource.FILE_KEY])
+        encoded = StringIO(self.resource_file[Resource.FILE_KEY])
         base64.decode(encoded, outfile)
         outfile.close()
     
@@ -114,23 +117,23 @@ class GenericResource(_entity):
         """ 
         Return the name of the file
         """
-        return self.resource_file[GenericResource.FILE_NAME_KEY]
+        return self.resource_file[Resource.FILE_NAME_KEY]
     
     def setFilename(self, filename):
         """ 
         Set the name of the file
         """
-        self.resource_file[GenericResource.FILE_NAME_KEY] = filename
+        self.resource_file[Resource.FILE_NAME_KEY] = filename
         (mimeType, enc) = mimetypes.guess_type(filename)
         if not mimeType:
-            mimeType = GenericResource.MIME_DEFAULT
-        self.resource_file[GenericResource.FILE_TYPE_KEY] = mimeType
+            mimeType = Resource.MIME_DEFAULT
+        self.resource_file[Resource.FILE_TYPE_KEY] = mimeType
     
     def getFiletype(self):
         """
         Return MIME type of the file
         """
-        return self.resource_file[GenericResource.FILE_TYPE_KEY]
+        return self.resource_file[Resource.FILE_TYPE_KEY]
 
 
 class HydroShare(object):
@@ -145,15 +148,15 @@ class HydroShare(object):
         # TODO: error checking
         self.user = self.api.user.get(username=user_name)['objects'][0]
 
-    def createResource(self, title, resource_type=GenericResource,
+    def createResource(self, title, resource_type=Resource,
                        filename=None):
         """
         Create a new resource.
         
         Returns the ID of the newly created resource
         """
-        if resource_type is GenericResource:
-            newResource = GenericResource()
+        if resource_type is Resource:
+            newResource = Resource()
             newResource.user = self.user['resource_uri']
             newResource.creator = self.user['resource_uri']
             newResource.title = title
@@ -164,9 +167,9 @@ class HydroShare(object):
             # TODO: error checking
             result = self.api.resource.post(initObj)
             # Copy created resource to existing object
-            if GenericResource.RESOURCE_FILE_KEY in initObj:
+            if Resource.RESOURCE_FILE_KEY in initObj:
                 # HydroShare doesn't send the file field back in the response, so copy it
-                result[GenericResource.RESOURCE_FILE_KEY] = initObj[GenericResource.RESOURCE_FILE_KEY]
+                result[Resource.RESOURCE_FILE_KEY] = initObj[Resource.RESOURCE_FILE_KEY]
             newResource._setObj(result)
             
             return newResource
@@ -177,19 +180,16 @@ class HydroShare(object):
     def getResource(self, id):
         # TODO: error checking
         result = self.api.resource.get(id=id)['objects'][0]
-        # TODO: type checking
-        return GenericResource(result)
+        return Resource(result)
         
     
     def updateResource(self, resource):
         initObj = resource._getObj()
-        
-        import pdb; pdb.set_trace()
-        
-        result = self.api.resource.put(initObj)
-        
+        # TODO error checking
+        result = self.api.resource(resource.id).put(data=initObj)
         resource._setObj(result)
         return resource
     
-    def deleteResource(self):
-        pass
+    def deleteResource(self, resource):
+        result = self.api.resource(resource.id).delete()
+        return result

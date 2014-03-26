@@ -5,7 +5,10 @@ Python client library for HydroShare's REST API
 
 Questions? brian_miles@unc.edu
 
-## Usage
+## To run tests
+    python setup.py test
+
+## To use
 	from hs_restclient import HydroShare
 	
 	hs = HydroShare('http://127.0.0.1:8001/api/v1/', user_name='hs', password='water')

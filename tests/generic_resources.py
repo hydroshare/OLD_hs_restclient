@@ -53,16 +53,25 @@ class GenericResourceTestCase(unittest.TestCase):
         self.assertTrue( filecmp.cmp(self.tmpFilename, self.tmpFilenameOrig) )
         
         
-#     def test_create_and_update_resource(self):
-#         title = 'my new resource'
-#         newResource = self.hs.createResource('my new resource', filename=self.zipFilename)
-#         newResourceId = newResource.id
-#         self.assertEqual(title, newResource.title)
-#         
-#         newResource.title = 'my updated title'
-#         updatedResource = self.hs.updateResource(newResource)
-#         self.assertEqual(newResource.title, updatedResource.title)
-#         
+    def test_create_and_update_resource(self):
+        title = 'my new resource'
+        newResource = self.hs.createResource('my new resource', filename=self.zipFilename)
+        newResourceId = newResource.id
+        self.assertEqual(title, newResource.title)
+         
+        newResource.title = 'my updated title'
+        updatedResource = self.hs.updateResource(newResource)
+        self.assertEqual(newResource.title, updatedResource.title)
+    
+    
+    def test_create_and_delete_resource(self):
+        title = 'my new resource'
+        newResource = self.hs.createResource('my new resource', filename=self.zipFilename)
+        newResourceId = newResource.id
+        self.assertEqual(title, newResource.title)
+         
+        result = self.hs.deleteResource(newResource)
+        self.assertTrue(result)
         
     @classmethod
     def tearDownClass(cls):

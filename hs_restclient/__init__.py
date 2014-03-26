@@ -101,7 +101,7 @@ class Resource(_entity):
         except KeyError:
             resource_file = {}
             self._obj[Resource.RESOURCE_FILE_KEY] = resource_file
-        resource_file[Resource.FILE_KEY] = encoded.getvalue().replace('\n', '')
+        resource_file[Resource.FILE_KEY] = encoded.getvalue()
         encoded.close()
       
     def writeFile(self, filename):
